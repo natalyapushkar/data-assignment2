@@ -1,0 +1,98 @@
+---
+title: "Understanding Child Deprivation and Societal Well-being"
+subtitle: "Exploring the Relationship Between child deprivation and other factors" 
+Author: "Natalya Pushkar"
+date: "2024-04-25"
+format: html
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+# Library
+library(tidyverse)
+library(plotly)
+
+# data 
+
+unicef_indicator_1 <- read_csv("unicef_indicator_1.csv")
+unicef_indicator_2 <- read_csv("unicef_indicator_2.csv")
+unicef_metadata <- read_csv("unicef_metadata.csv")
+
+# transformations
+data_join <- full_join(unicef_indicator_1, unicef_indicator_2)
+data_join <- full_join(data_join, unicef_metadata)
+
+```
+
+```{r}
+#| fig-cap: "The world map illustrates life expectancy variations across regions, with darker colors indicating shorter life expectancies. This visual representation highlights global disparities in health outcomes, emphasizing areas with lower life expectancies. This information provides valuable insights into regional health patterns and informs further analysis of factors influencing longevity worldwide."
+map_world <- map_data("world")
+map_data_join <- full_join(unicef_indicator_1, map_world, by = c("country" = "region"))
+
+ggplot(map_data_join) +
+  aes(x = long, y = lat, group = group, fill = obs_value) + 
+  geom_polygon()
+
+
+```
+
+```{r}
+timeseries_plot_1 <- data_join %>%
+  ggplot() +
+  aes(x = year, y = `Population, total`, color = country) + 
+  geom_line() +
+  labs(
+    x = "Year",
+    y = "Population, total",
+    title = "Population growth 1960-2022"
+  )
+
+```
+
+```{r}
+#| fig-cap: "The scatterplot illustrates the correlation between GDP per capita and life expectancy at birth across countries from 1960 to 2021. Each point represents a country, with GDP per capita on the x-axis and life expectancy on the y-axis. Point color denotes country, while size reflects population size. This visualization allows for the examination of trends in the relationship between economic prosperity and health outcomes over time."
+
+
+ggplot(data_join) + 
+  aes(x = data_join[["GDP per capita (constant 2015 US$)"]], y = data_join[["Life expectancy at birth, total (years)"]], color = country, size = data_join[["Population, total"]]) + 
+  geom_point(alpha = 0.2) +
+  facet_wrap(~ year) +
+  scale_x_continuous(limits = c(0, 50000),
+                     breaks = c(20000, 40000)) +
+  labs(
+    x = "GDP per capita (constant 2015 US$)",
+    y = "Life expectancy at birth, total (years)",
+    title = "Evolution of the relationship between GDP per capita and Life expectancy at birth between 1960 and 2021"
+      )
+
+```
+
+```{r}
+#| fig-cap: "The bar chart illustrates the changing trends in life expectancy across countries from 1960 to 2021. Each bar represents the mean life expectancy for a country in a specific year, offering a snapshot of how life expectancy has evolved over time. By comparing bars across different years, patterns in life expectancy can be discerned, providing insights into global health trends and disparities."
+
+data_join %>%
+  group_by(country, year) %>%
+  summarise(m_lifeexp = mean(`Life expectancy at birth, total (years)`, na.rm = TRUE)) %>%
+  ggplot() + 
+  aes(x = country, y = m_lifeexp, fill = country) + 
+  geom_col() + 
+  facet_wrap(~ year) +
+  labs(
+    x = "Country",
+    y = "Mean Life Expectancy",
+    title = "Evolution of the life expectancy between 1960 and 2021"
+  )
+
+```
+
+
+
+
+
+
+
+
+
+
